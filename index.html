@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Great Wines HK Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500..700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a sommelier's tasting sheet. Sticky header with progress, three views (plan, wine list, floor map), ruled rows, Bodoni numerals for pour order. */
+:root{
+  --bg:#F5F3F6; --surface:#FFFFFF; --sunk:#EEE9EF; --ink:#1E1520; --muted:#6B5F6D; --line:#E2D9E1;
+  --accent:#8C1C3B; --accent-ink:#FFFFFF; --accent-soft:#F4E1E7;
+  --brass:#7A5C12; --brass-soft:#F3EAD3; --ok:#2E7A4C; --ok-soft:#DFF0E5;
+  --t-sp:#A9A42A; --t-w:#DDB02E; --t-b:#E59BB0; --t-r:#B4243A; --t-d:#C27329; --t-f:#5C1A13;
+  --f-display:"Bodoni Moda","Bodoni 72","Didot",Georgia,serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141015; --surface:#1C161D; --sunk:#251D27; --ink:#F1E9EF; --muted:#A898A6; --line:#352B37;
+    --accent:#E35B7D; --accent-ink:#1A0D12; --accent-soft:#3B1D28;
+    --brass:#DDB862; --brass-soft:#352B16; --ok:#62C08A; --ok-soft:#1D3326;
+    --t-sp:#CFC85A; --t-w:#E9C65A; --t-b:#EDB0C1; --t-r:#E2566C; --t-d:#DE9550; --t-f:#B0675A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141015; --surface:#1C161D; --sunk:#251D27; --ink:#F1E9EF; --muted:#A898A6; --line:#352B37;
+  --accent:#E35B7D; --accent-ink:#1A0D12; --accent-soft:#3B1D28;
+  --brass:#DDB862; --brass-soft:#352B16; --ok:#62C08A; --ok-soft:#1D3326;
+  --t-sp:#CFC85A; --t-w:#E9C65A; --t-b:#EDB0C1; --t-r:#E2566C; --t-d:#DE9550; --t-f:#B0675A;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono);font-size:.82em;letter-spacing:.01em}
+
+/* Header */
+.top{background:var(--surface)}
+.tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:14px 10px;flex-wrap:wrap}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--f-display);font-weight:600;font-size:clamp(26px,5.4vw,36px);line-height:1.05;margin:4px 0 2px;letter-spacing:-.01em;text-wrap:balance}
+.meta{color:var(--muted);font-size:13px}
+.prog{min-width:180px;flex:0 1 260px;display:grid;gap:6px;justify-items:end}
+.prog-txt{font-size:13px;color:var(--muted)}
+.prog-txt b{color:var(--ink);font-weight:600}
+.bar{width:100%;height:6px;border-radius:6px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width .3s}
+.sync{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sync[data-s="cloud"]::before{background:var(--ok)}
+.sync[data-s="saving"]::before{background:var(--brass)}
+.sync[data-s="error"]::before{background:var(--accent)}
+.tabs{display:flex;gap:4px;margin-top:2px}
+.tab{appearance:none;border:0;background:none;padding:10px 12px 11px;font-weight:600;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .c{font-family:var(--f-mono);font-size:11px;font-weight:500;margin-left:6px;padding:1px 6px;border-radius:9px;background:var(--sunk);color:var(--muted)}
+.tab[aria-selected="true"] .c{background:var(--accent-soft);color:var(--accent)}
+
+main{padding-block:18px 64px}
+section[hidden]{display:none!important}
+h2{font-family:var(--f-display);font-weight:600;font-size:22px;margin:0;line-height:1.15;text-wrap:balance}
+h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.lede{color:var(--muted);margin:4px 0 0;max-width:62ch}
+
+/* Controls */
+.ctl-row{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:2px}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.quiet{border-color:transparent;background:none;color:var(--muted);font-weight:500}
+.btn.quiet:hover{color:var(--ink)}
+select,input[type="search"]{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font-size:14px;min-width:0}
+label.chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
+label.chk input{accent-color:var(--accent);width:16px;height:16px}
+
+/* Plan */
+.plan-head{display:grid;gap:14px;margin-bottom:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.auto{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.confirm{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--accent-soft);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.confirm span{flex:1 1 220px}
+.stats{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted)}
+.stats b{color:var(--ink);font-weight:600}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.hint b{color:var(--ink);font-weight:600}
+
+.next{border:1px solid var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:14px 16px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:start}
+.next .big{font-family:var(--f-display);font-size:44px;line-height:.9;color:var(--accent);font-weight:700;grid-row:span 4}
+.next .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.next .ttl{font-weight:600;font-size:16px}
+.next ul{margin:2px 0 6px;padding:0;list-style:none;font-size:14px;color:var(--ink)}
+.next .acts{grid-column:2;display:flex;gap:8px;flex-wrap:wrap}
+.next.done{border-color:var(--ok);background:var(--ok-soft)}
+.next.done .big,.next.done .lbl{color:var(--ok)}
+
+ol.stops{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.stop{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:4px 12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.stop .n{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1;color:var(--accent);text-align:right;padding-top:2px}
+.stop.all-done .n{color:var(--ok)}
+.stop-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.stop-h .tbl{font-family:var(--f-mono);font-size:12px;padding:2px 7px;border-radius:5px;background:var(--sunk);color:var(--ink);white-space:nowrap}
+.stop-h .wy{font-weight:600}
+.stop-h .tag{font-size:12px;color:var(--brass)}
+.stop-ctl{display:flex;flex-direction:column;gap:4px}
+.ib{width:32px;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:7px;display:grid;place-items:center;color:var(--muted);padding:0}
+.ib:hover{color:var(--ink);border-color:var(--muted)}
+.ib:disabled{opacity:.35;cursor:default}
+.ib svg{width:14px;height:14px}
+ul.pours{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.pour{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:2px 10px;align-items:start}
+.tick{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;color:transparent}
+.tick svg{width:14px;height:14px}
+.tick[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.pname{border:0;background:none;padding:0;text-align:left;font-weight:500;line-height:1.35;display:block;width:100%}
+.pour.tasted .pname{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.pmeta{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:2px}
+.pmeta .stars{color:var(--brass)}
+.pour .x{border:0;background:none;color:var(--muted);padding:2px 4px;font-size:18px;line-height:1}
+.pour .x:hover{color:var(--accent)}
+.notes{grid-column:2 / 4;background:var(--sunk);border-radius:8px;padding:10px;display:grid;gap:8px;margin-top:4px}
+.rate{display:flex;gap:2px;align-items:center;font-size:13px;color:var(--muted)}
+.rate button{border:0;background:none;padding:2px 3px;font-size:20px;line-height:1;color:var(--line)}
+.rate button.on{color:var(--brass)}
+.notes textarea{width:100%;min-height:60px;resize:vertical;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:8px;font-size:14px}
+.plan-foot{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.tips{margin-top:26px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.tips p{margin:0;font-size:13.5px;color:var(--muted);border-top:2px solid var(--line);padding-top:8px}
+.tips b{color:var(--ink);display:block;font-size:13px;margin-bottom:2px}
+.empty{padding:28px 0;text-align:left}
+.empty p{color:var(--muted);max-width:52ch}
+
+/* Wine list */
+.filters{display:grid;gap:10px;margin-bottom:12px}
+.filters .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters input[type="search"]{flex:1 1 240px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px 5px 9px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--sunk)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.t-SP{background:var(--t-sp)}.t-W{background:var(--t-w)}.t-B{background:var(--t-b)}.t-R{background:var(--t-r)}.t-D{background:var(--t-d)}.t-F{background:var(--t-f)}
+.count{font-size:13px;color:var(--muted);margin:4px 0 8px}
+ol.wl{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.wrow{display:grid;grid-template-columns:2.4rem minmax(0,1fr) auto;gap:2px 10px;padding:11px 0;border-bottom:1px solid var(--line);align-items:start}
+.wrow .rk{font-family:var(--f-display);font-weight:600;font-size:20px;line-height:1.1;color:var(--muted);text-align:right}
+.wrow.in .rk{color:var(--accent)}
+.wname{font-weight:500;line-height:1.35;display:flex;gap:8px;align-items:baseline}
+.wname .dot{transform:translateY(1px)}
+.wsub{font-size:13px;color:var(--muted);margin-top:1px}
+.wsub button{border:0;background:none;padding:0;color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.wsub button:hover{color:var(--ink)}
+.wnote{font-size:12.5px;color:var(--brass);margin-top:2px}
+.wnums{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:5px;font-size:13px;align-items:center}
+.pts{font-weight:600}
+.pts small{font-weight:500;color:var(--muted);font-size:11px;margin-right:3px;letter-spacing:.04em}
+.price{color:var(--ink)}
+.pr{color:var(--muted)}
+.fame{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--brass-soft);color:var(--brass)}
+.fame.f5{background:var(--brass);color:var(--surface)}
+.add{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;color:var(--ink)}
+.add svg{width:16px;height:16px}
+.add:hover{border-color:var(--accent);color:var(--accent)}
+.add[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+details.about{margin:6px 0 14px;font-size:13.5px;color:var(--muted)}
+details.about summary{cursor:pointer;color:var(--ink);font-weight:500}
+details.about p{margin:8px 0 0;max-width:68ch}
+.more{display:flex;justify-content:center;padding:14px 0}
+
+/* Map */
+.map-grid{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.map-grid{grid-template-columns:minmax(0,540px) minmax(0,1fr)}}
+.mapbox{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.mapbox.zoom{max-height:80vh}
+.mapbox svg{display:block;width:100%;height:auto}
+.mapbox.zoom svg{width:190%;max-width:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:10px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.room{fill:var(--sunk);stroke:var(--line);stroke-width:2}
+.tlab{font-family:var(--f-mono);font-size:12px;fill:var(--muted)}
+.tlab.on{fill:var(--ink);font-weight:500}
+.f-SP{fill:var(--t-sp)}.f-W{fill:var(--t-w)}.f-B{fill:var(--t-b)}.f-R{fill:var(--t-r)}.f-D{fill:var(--t-d)}.f-F{fill:var(--t-f)}
+.badge{fill:var(--accent)}
+.badge.done{fill:var(--ok)}
+.btxt{font-family:var(--f-body);font-size:12px;font-weight:700;fill:var(--accent-ink)}
+.badge.done + .btxt{fill:var(--surface)}
+.route{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 5;opacity:.55}
+.heat{fill:var(--accent)}
+.hl{fill:none;stroke:var(--ink);stroke-width:2}
+.hit{fill:transparent;cursor:pointer}
+.ent{font-family:var(--f-body);font-size:11px;letter-spacing:.2em;fill:var(--accent);font-weight:600}
+.arr{stroke:var(--accent);stroke-width:2;fill:none}
+.route-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.route-list li button{width:100%;text-align:left;border:0;background:none;padding:7px 8px;border-radius:7px;display:grid;grid-template-columns:2.2rem 3.4rem minmax(0,1fr);gap:8px;align-items:baseline}
+.route-list li button:hover{background:var(--sunk)}
+.route-list .s{font-family:var(--f-display);font-weight:700;color:var(--accent);font-size:18px;text-align:right}
+.route-list .done .s{color:var(--ok)}
+.route-list .t{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.route-list .w{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,5,10,.45);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:16px 16px 0 0;max-height:78vh;overflow:auto;box-shadow:0 -8px 30px rgba(0,0,0,.18);padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet-in{max-width:620px;margin:0 auto;padding-top:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px}
+.sheet .wrow{grid-template-columns:minmax(0,1fr) auto}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13.5px;z-index:30;max-width:calc(100% - 32px)}
+.copybox{width:100%;min-height:160px;margin-top:10px;font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--surface)}
+
+@media (max-width:560px){
+  .prog{justify-items:start;flex-basis:100%}
+  .stop{grid-template-columns:40px minmax(0,1fr) auto;gap:4px 10px}
+  .stop .n{font-size:28px}
+  .tab{padding-inline:10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="top-in">
+      <div>
+        <div class="eyebrow">James Suckling · Great Wines of the World</div>
+        <h1>Hong Kong Tasting Plan</h1>
+        <div class="meta">Fri 30 Oct 2026 · Four Seasons Hotel Hong Kong · 119 tables + foyer</div>
+      </div>
+      <div class="prog">
+        <div class="prog-txt num" id="progTxt"></div>
+        <div class="bar"><i id="progBar" style="width:0"></i></div>
+        <div class="sync" id="sync" data-s="local">Saved on this device</div>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="tabbar">
+  <div class="wrap">
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" id="tab-plan" data-act="tab" data-v="plan">My plan<span class="c num" id="cPlan">0</span></button>
+      <button class="tab" role="tab" id="tab-wines" data-act="tab" data-v="wines">All wines<span class="c num" id="cWines">0</span></button>
+      <button class="tab" role="tab" id="tab-map" data-act="tab" data-v="map">Floor map</button>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap">
+  <section id="view-plan" role="tabpanel" aria-labelledby="tab-plan"></section>
+  <section id="view-wines" role="tabpanel" aria-labelledby="tab-wines" hidden>
+    <div class="filters">
+      <div class="row">
+        <input type="search" id="q" placeholder="Search wine, winery, region" aria-label="Search wines">
+        <select id="sort" aria-label="Sort by">
+          <option value="prestige">Sort: Prestige</option>
+          <option value="price">Sort: Price, high to low</option>
+          <option value="fame">Sort: Fame</option>
+          <option value="pts">Sort: JS points</option>
+          <option value="table">Sort: Table number</option>
+        </select>
+      </div>
+      <div class="row" id="styleChips"></div>
+      <div class="row">
+        <select id="country" aria-label="Country"></select>
+        <select id="minPts" aria-label="Minimum JS points">
+          <option value="0">Any JS score</option>
+          <option value="95">JS 95+</option>
+          <option value="97">JS 97+</option>
+          <option value="99">JS 99+</option>
+          <option value="100">JS 100 only</option>
+        </select>
+        <select id="inPlan" aria-label="Plan filter">
+          <option value="all">All wines</option>
+          <option value="out">Not in my plan</option>
+          <option value="in">In my plan</option>
+        </select>
+        <span class="seg" role="group" aria-label="Currency" id="curSeg"></span>
+      </div>
+    </div>
+    <details class="about">
+      <summary>How the ranking works</summary>
+      <p><b>Prestige</b> blends three things: estimated bottle price (50%), how famous the producer or wine is (35%), and the James Suckling score printed on the official cheat sheet (15%). Fame tiers run from Icon (a first-call name like Pavie, Ornellaia or Almaviva) down to Discovery.</p>
+      <p>Prices are my estimates of current retail per 750 ml bottle, based on merchant listings and release prices as of October 2026. Treat them as a guide for ranking, not a quote. JS points come from the event's own wine list.</p>
+    </details>
+    <div class="count num" id="count"></div>
+    <ol class="wl" id="wl"></ol>
+    <div class="more" id="moreBox"></div>
+  </section>
+  <section id="view-map" role="tabpanel" aria-labelledby="tab-map" hidden></section>
+</main>
+
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Data: from the official HK cheat sheet (table, winery, wine, region, country, JS pts, style) + est. USD retail and fame tier ---------- */
+const RAW = [
+[1,"Henri Giraud","Henri Giraud Champagne Aÿ Grand Cru MV20 Brut NV","Champagne","FR",97,"SP",220,4,"Oak-aged Aÿ grand cru from a cult grower house"],
+[1,"Henri Giraud","Henri Giraud Champagne Aÿ Grand Cru Fût de Chêne MV Rosé","Champagne","FR",97,"SP",300,4,"Rare oak-aged grand cru rosé"],
+[2,"Alfred Gratien","Alfred Gratien Champagne Brut","Champagne","FR",92,"SP",50,3],
+[2,"Alfred Gratien","Alfred Gratien Champagne Cuvée Paradis Brut Rosé 2008","Champagne","FR",93,"SP",170,3,"Prestige cuvée, 18 years on"],
+[3,"Catena Zapata","Catena Zapata Chardonnay Mendoza Adrianna Vineyard White Bones 2022","Mendoza","AR",100,"W",140,5,"JS 100: Argentina's most famous white"],
+[3,"Catena Zapata","Catena Zapata Cabernet Sauvignon Agrelo Birth of Cabernet 2022","Mendoza","AR",96,"R",90,5],
+[4,"El Enemigo","El Enemigo Semillon Mendoza 2024","Mendoza","AR",94,"W",30,3],
+[4,"El Enemigo","El Enemigo Cabernet Franc Gualtallary Gran Enemigo Single Vineyard 2023","Mendoza","AR",100,"R",100,3,"JS 100 Cabernet Franc"],
+[5,"Martin's Lane","Martin’s Lane Riesling Okanagan Valley Fritzi’s Vineyard 2023","British Columbia","CA",94,"W",40,2],
+[5,"Martin's Lane","Martin’s Lane Pinot Noir Okanagan Valley Naramata Ranch Vineyard 2023","British Columbia","CA",94,"R",75,2],
+[6,"St. Supéry","St. Supéry Sauvignon Blanc Napa Valley Dollarhide Estate Vineyard 2024","California","US",92,"W",40,2],
+[6,"St. Supéry","St. Supéry Cabernet Sauvignon Napa Valley Dollarhide Estate Vineyard 2021","California","US",94,"R",110,2],
+[7,"Viña Carmen","Carmen Semillon Apalta Quijada 2023","Valle Central","CL",95,"W",35,2],
+[7,"Viña Carmen","Carmen Cabernet Sauvignon Alto Jahuel Gold 2023","Valle Central","CL",96,"R",80,2],
+[8,"Santa Rita","Santa Rita Sauvignon Blanc Leyda Floresta 2023","Aconcagua","CL",92,"W",25,3],
+[8,"Santa Rita","Santa Rita Cabernet Sauvignon Valle de Maipo Casa Real Reserva Especial 2023","Valle Central","CL",97,"R",90,3],
+[9,"Šapat","Atelje Vina Šapat Chardonnay Central Serbia Atila 2023","Central Serbia","RS",93,"W",35,1],
+[9,"Šapat","Atelje Vina Šapat Central Serbia Cuvée 2022","Central Serbia","RS",93,"R",40,1],
+[10,"Phantom Creek","Phantom Creek Estates Riesling Okanagan Valley Similkameen Valley 2022","British Columbia","CA",97,"W",45,2],
+[10,"Phantom Creek","Phantom Creek Estates Okanagan Valley Petite Cuvée 2022","British Columbia","CA",93,"R",55,2],
+[11,"T-Oinos","T-Oinos Assyrtiko Cyclades Clos Stégasta 2024","Aegean Islands","GR",97,"W",90,3],
+[11,"T-Oinos","T-Oinos Mavrotragano Cyclades Clos Stégasta Rare 2022","Aegean Islands","GR",99,"R",230,3,"Cult red from Tinos, made only in top years"],
+[12,"Rosset Terroir","Rosset Valle d'Aosta Sopraquota 900 2022","Valle d'Aosta","IT",98,"W",80,2],
+[12,"Rosset Terroir","Rosset Syrah Valle d'Aosta 870 2022","Valle d'Aosta","IT",96,"R",70,2],
+[13,"Philipponnat","Philipponnat Champagne Clos des Goisses Extra Brut 2016","Champagne","FR",97,"SP",280,5,"Legendary single walled-vineyard Champagne"],
+[13,"Philipponnat","Philipponnat Champagne Réserve Perpétuelle Brut","Champagne","FR",95,"SP",60,3],
+[14,"Otronia","Otronia Chardonnay Patagonia 2022","Patagonia","AR",97,"W",70,2],
+[14,"Otronia","Otronia Pinot Noir Patagonia 2022","Patagonia","AR",95,"R",60,2],
+[15,"Petrolo","Petrolo Trebbiano Toscana Bòggina B 2024","Tuscany","IT",97,"W",70,3],
+[15,"Petrolo","Petrolo Valdarno di Sopra Galatrona 2024","Tuscany","IT",96,"R",120,3],
+[16,"Bouza","Bouza Chardonnay Maldonado Punta Negra Las Espinas 2023","Maldonado","UY",93,"W",45,2],
+[16,"Bouza","Bouza Tannat Merlot Tempranillo Montevideo Monte Vide Eu 2024","Montevideo","UY",92,"R",55,2],
+[17,"Concha y Toro","Viña Amelia Chardonnay Valle de Limarí Quebrada Seca 2024","Coquimbo","CL",96,"W",40,2],
+[17,"Don Melchor","Viña Don Melchor Cabernet Sauvignon Puente Alto 2022","Valle Central","CL",99,"R",150,5,"Chile's benchmark Puente Alto Cabernet"],
+[18,"Elena Walch","Elena Walch Alto Adige Beyond the Clouds 2023","Trentino-Alto Adige","IT",97,"W",75,3],
+[18,"Elena Walch","Elena Walch Pinot Grigio Alto Adige Vigna Castel Ringberg 2024","Trentino-Alto Adige","IT",95,"W",35,3],
+[19,"Vasse Felix","Vasse Felix Chardonnay Margaret River Heytesbury 2024","Western Australia","AU",97,"W",80,3],
+[19,"Vasse Felix","Vasse Felix Cabernet Sauvignon Margaret River 2023","Western Australia","AU",95,"R",40,3],
+[20,"Domaine de Chevalier","Domaine de Chevalier Pessac-Léognan Blanc 2023","Bordeaux","FR",98,"W",150,4,"One of Bordeaux's greatest dry whites"],
+[20,"Domaine de Chevalier","Domaine de Chevalier Pessac-Léognan 2022","Bordeaux","FR",98,"R",90,4],
+[21,"Amici","Amici Chardonnay Sonoma County Russian River Valley Charles Heintz Vineyard 2023","California","US",97,"W",65,2],
+[21,"Amici","Amici Cabernet Sauvignon Napa Valley Missouri Hopper 2023","California","US",100,"R",235,3,"JS 100 from Beckstoffer's Oakville vineyard"],
+[22,"Les Crêtes","Les Crêtes Chardonnay Valle d'Aosta Cuvée Bois 2023","Valle d'Aosta","IT",95,"W",65,3],
+[22,"Les Crêtes","Les Crêtes Pinot Nero Valle d'Aosta Revei 2022","Valle d'Aosta","IT",97,"R",60,3],
+[23,"Marjan Simčič","Simčič Ribolla Brda Opoka Medana Jama Cru 2022","Brda","SI",95,"W",80,3],
+[23,"Marjan Simčič","Simčič Brda Numerals Unico M 2020","Brda","SI",97,"R",120,3],
+[24,"Pio Cesare","Pio Cesare Chardonnay Langhe Piodilei 2023","Piedmont","IT",95,"W",75,4],
+[24,"Pio Cesare","Pio Cesare Barolo 2021","Piedmont","IT",96,"R",80,4],
+[25,"CVNE","CVNE Rioja Monopole Blanco Seco Gran Reserva 2017","La Rioja","ES",98,"W",100,4,"Rare aged white Rioja"],
+[25,"CVNE","Contino Rioja Gran Reserva 2018","La Rioja","ES",98,"R",80,4],
+[26,"Jermann","Jermann Venezia-Giulia Where Dreams Have No End 2023","Friuli-Venezia Giulia","IT",97,"W",75,3],
+[26,"Jermann","Jermann Venezia-Giulia Vintage Tunina 2023","Friuli-Venezia Giulia","IT",94,"W",65,3],
+[27,"Vinosia","Luciano Ercolino Fiano di Avellino Belvedere 2024","Campania","IT",92,"W",25,2],
+[27,"Vinosia","Vinosia Taurasi Marziacanale 2015","Campania","IT",94,"R",45,2],
+[28,"Monteverro","Monteverro Chardonnay Toscana 2023","Tuscany","IT",96,"W",100,3],
+[28,"Monteverro","Monteverro Toscana 2019","Tuscany","IT",98,"R",120,3],
+[29,"Nals Margreid","Nals Margreid Pinot Bianco Alto Adige Sirmian 2023","Trentino-Alto Adige","IT",95,"W",30,2],
+[29,"Nals Margreid","Nals Margreid Chardonnay Alto Adige Nama 2022","Trentino-Alto Adige","IT",97,"W",55,2],
+[30,"Donum Estate","Donum Chardonnay Sonoma County Russian River Valley Ten Oaks Vineyard 2024","California","US",98,"W",95,3],
+[30,"Donum Estate","Donum Pinot Noir Sonoma County Carneros TFV 2024","California","US",97,"R",110,3],
+[31,"Cantina Terlano","Cantina Terlan Alto Adige Terlaner I Grande Cuvée 2022","Trentino-Alto Adige","IT",98,"W",250,4,"Alto Adige's most prized white"],
+[31,"Cantina Terlano","Cantina Terlan Sauvignon Blanc Alto Adige Quarz 2023","Trentino-Alto Adige","IT",95,"W",55,4],
+[32,"Querciabella","Querciabella Toscana Batàr 2023","Tuscany","IT",94,"W",120,4],
+[32,"Querciabella","Querciabella Toscana Camartina 2019","Tuscany","IT",98,"R",140,4],
+[33,"Navigator","Gabrielle Ashley Chardonnay Napa Valley Carneros 2025","California","US",93,"W",40,1],
+[33,"Navigator","Golden Archer Cabernet Sauvignon Napa Valley 2023","California","US",93,"R",60,1],
+[34,"Terrazas de los Andes","Terrazas de los Andes Chardonnay Valle de Uco Reserva 2025","Mendoza","AR",92,"W",20,3],
+[34,"Terrazas de los Andes","Terrazas de los Andes Malbec Mendoza Grand 2022","Mendoza","AR",93,"R",45,3],
+[35,"Rombauer","Rombauer Vineyards Chardonnay Napa Valley Carneros Proprietor Selection 2023","California","US",94,"W",75,4],
+[35,"Rombauer","Rombauer Vineyards Chardonnay Napa Valley 2024","California","US",92,"W",40,4],
+[36,"Casale del Giglio","Casale del Giglio Bellone Lazio Radix 2019","Lazio","IT",94,"W",40,2],
+[36,"Casale del Giglio","Casale del Giglio Lazio Mater Matuta 2019","Lazio","IT",93,"R",55,2],
+[37,"Domaine Lafage","Domaine Lafage Côtes du Roussillon Cabirau Blanc 2024","Languedoc-Roussillon","FR",93,"W",20,2],
+[37,"Domaine Lafage","Domaine Lafage Côtes Catalanes La Caumette 2022","Languedoc-Roussillon","FR",94,"R",35,2],
+[38,"Fontezoppa","Fontezoppa Ribona Colli Maceratesi Riserva dell’Asola 2020","Marche","IT",94,"W",35,1],
+[38,"Fontezoppa","Fontezoppa Serrapetrona Morò 2021","Marche","IT",94,"R",40,1],
+[39,"Château d'Esclans","Caves d’Esclans Côtes de Provence Whispering Angel Rosé 2025","Provence","FR",91,"B",25,4,"The world's best-known rosé"],
+[39,"Château d'Esclans","Château d'Esclans Côtes de Provence Garrus Rosé 2024","Provence","FR",96,"B",110,4,"Prestige barrel-aged Provence rosé"],
+[40,"Gérard Bertrand","Gérard Bertrand Languedoc Cabrières Clos du Temple 2023","Languedoc-Roussillon","FR",95,"B",220,4,"Among the world's most expensive rosés"],
+[40,"Gérard Bertrand","Gérard Bertrand La Clape Château L’Hospitalet 2021","Languedoc-Roussillon","FR",92,"R",35,3],
+[41,"Château Calon-Ségur","Château Calon-Ségur St.-Estèphe 2019","Bordeaux","FR",96,"R",150,5,"St-Estèphe Third Growth, the heart label"],
+[41,"Château Capbern","Château Capbern St.-Estèphe 2019","Bordeaux","FR",93,"R",40,3],
+[42,"Pian delle Querci","Pian delle Querci Brunello di Montalcino Il Picchio Riserva 2020","Tuscany","IT",94,"R",55,2],
+[42,"Pian delle Querci","Pian delle Querci Brunello di Montalcino Il Picchio Serbolino 2021","Tuscany","IT",94,"R",45,2],
+[43,"Bodegas Portia","Portia Ribera del Duero Triennia 2020","Castilla y León","ES",93,"R",45,2],
+[43,"Bodegas Faustino","Faustino Rioja Gran Faustino I Gran Reserva 2005","La Rioja","ES",93,"R",60,3,"20-year-old Rioja"],
+[44,"Viticcio","Viticcio Rosso di Toscana Sospetti 2024","Tuscany","IT",93,"R",25,2],
+[44,"Viticcio","Viticcio Chianti Classico Riserva 2021","Tuscany","IT",94,"R",35,2],
+[45,"Checkmate","Checkmate Chardonnay Okanagan Valley Fool’s Mate 2022","British Columbia","CA",96,"W",100,3],
+[45,"Checkmate","Checkmate Chardonnay Okanagan Valley Jagged Rock Vineyard Little Pawn 2022","British Columbia","CA",94,"W",90,3],
+[45,"Mission Hill","Mission Hill Okanagan Valley Oculus 2020","British Columbia","CA",92,"R",120,3],
+[45,"Mission Hill","Mission Hill Cabernet Franc Okanagan Valley Terroir Collection 2022","British Columbia","CA",94,"R",45,3],
+[46,"Finca 8 Vents","Atlan & Artisan Mallorca 8 Vents 2023","Islas Baleares","ES",92,"R",30,1],
+[46,"Finca 8 Vents","Atlan & Artisan Mallorca 8 Vents Gran 2022","Islas Baleares","ES",93,"R",45,1],
+[47,"Terra Sancta","Terra Sancta Pinot Noir Central Otago Bannockburn Jackson's Block 2024","Central Otago","NZ",99,"R",60,2],
+[47,"Terra Sancta","Terra Sancta Pinot Noir Central Otago Bannockburn Mysterious Diggings 2024","Central Otago","NZ",98,"R",45,2],
+[48,"Baron Philippe de Rothschild Chile","Baron Philippe de Rothschild Chile Valle de Maipo Baronesa P. 2021","Valle Central","CL",96,"R",70,3],
+[48,"Escudo Rojo","Baron Philippe de Rothschild Chile Cabernet Sauvignon Valle de Maipo Escudo Rojo Origine 2022","Valle Central","CL",93,"R",30,3],
+[49,"Château de Lamarque","Château de Lamarque Haut-Médoc 2020","Bordeaux","FR",92,"R",30,2],
+[49,"Château de Lamarque","Château de Lamarque Haut-Médoc 2022","Bordeaux","FR",94,"R",30,2],
+[50,"Ciavolich","Ciavolich Montepulciano d'Abruzzo Divus 2021","Abruzzo","IT",92,"R",35,2],
+[50,"Ciavolich","Ciavolich Montepulciano d'Abruzzo Fosso Cancelli 2020","Abruzzo","IT",92,"R",45,2],
+[51,"Château La Tour Carnet","Château La Tour Carnet Haut-Médoc 2023","Bordeaux","FR",92,"R",40,3],
+[51,"Château Pape Clément","Château Pape Clément Pessac-Léognan 2023","Bordeaux","FR",97,"R",110,4,"Pessac-Léognan Grand Cru Classé"],
+[52,"Famiglia Casadei","Casadei Cabernet Franc Toscana Filare 18 2022","Tuscany","IT",93,"R",55,2],
+[52,"Famiglia Casadei","Castello del Trebbio Chianti Rufina Lastricato Riserva 2021","Tuscany","IT",92,"R",35,2],
+[53,"Ferratus","Ferratus Tempranillo Ribera del Duero Origen 2021","Castilla y León","ES",93,"R",35,1],
+[53,"Ferratus","Ferratus Ribera del Duero Sensaciones 2021","Castilla y León","ES",94,"R",55,1],
+[54,"Château Cantenac Brown","Château Cantenac Brown Margaux 2016","Bordeaux","FR",94,"R",80,3],
+[54,"Château Cantenac Brown","Château Cantenac Brown Margaux 2023","Bordeaux","FR",95,"R",65,3],
+[55,"Enclos Tourmaline","Enclos Tourmaline Pomerol 2023","Bordeaux","FR",95,"R",120,2],
+[55,"Château Bellefont-Belcier","Château Bellefont-Belcier St.-Emilion 2023","Bordeaux","FR",97,"R",55,3],
+[56,"Los Vascos","Los Vascos Valle de Colchagua Cañeten 2022","Valle Central","CL",95,"R",60,3],
+[56,"Long Dai","Long Dai Qiushan 瓏岱丘山 2023","Shandong","CN",95,"R",90,4,"Lafite's estate in China"],
+[57,"Domaines Bournet-Lapostolle","Clos Apalta Valle de Apalta Le Petit Clos 2022","Valle Central","CL",96,"R",60,3],
+[57,"Domaines Bournet-Lapostolle","Clos Apalta Valle de Apalta 2022","Valle Central","CL",99,"R",160,5,"Lapostolle's flagship, a Chilean icon"],
+[58,"Château d'Issan","Château d'Issan Margaux 2018","Bordeaux","FR",95,"R",80,3],
+[58,"Château d'Issan","Château d'Issan Margaux 2020","Bordeaux","FR",97,"R",75,3],
+[59,"Castello del Terriccio","Castello del Terriccio Toscana Lupicaia 2020","Tuscany","IT",96,"R",120,3],
+[59,"Castello del Terriccio","Castello del Terriccio Toscana Tassinaia 2023","Tuscany","IT",93,"R",40,3],
+[60,"Piccini 1882","Piccini Brunello di Montalcino 2020","Tuscany","IT",91,"R",45,2],
+[60,"Piccini 1882","Piccini Toscana Sasso al Poggio 2022","Tuscany","IT",91,"R",30,2],
+[61,"Château Lascombes","Château Lascombes Margaux 2018","Bordeaux","FR",95,"R",85,4],
+[61,"Château Lascombes","Château Lascombes Margaux 2023","Bordeaux","FR",95,"R",75,4],
+[62,"Arca Yaco","Arca Yaco Malbec Valle Calchaqui Amar Y Vivir 2024","Salta","AR",94,"R",50,1],
+[62,"Arca Yaco","Arca Yaco Malbec Valle Calchaqui Finca El Monte Amar Y Vivir 2022","Salta","AR",95,"R",70,1],
+[63,"Caiarossa","Caiarossa Toscana 2020","Tuscany","IT",95,"R",65,2],
+[63,"Château Giscours","Château Giscours Margaux 2020","Bordeaux","FR",96,"R",80,4],
+[64,"Castello di Ama","Castello di Ama Chianti Classico Gran Selezione Vigneto Bellavista 2020","Tuscany","IT",96,"R",160,4,"Ama's top single-vineyard Chianti"],
+[64,"Castello di Ama","Castello di Ama Chianti Classico Gran Selezione San Lorenzo 2020","Tuscany","IT",95,"R",50,4],
+[65,"Dosio","Dosio Barolo Serradenari 2022","Piedmont","IT",93,"R",60,2],
+[66,"Bodegas Arzuaga Navarro","Bodegas Arzuaga Ribera del Duero Crianza 2023","Castilla y León","ES",92,"R",35,2],
+[66,"Bodegas Arzuaga Navarro","Bodegas Arzuaga Ribera del Duero Reserva 2021","Castilla y León","ES",92,"R",55,2],
+[67,"Fattoria dei Barbi","Fattoria dei Barbi Brunello di Montalcino 2021","Tuscany","IT",93,"R",50,3],
+[67,"Fattoria dei Barbi","Fattoria dei Barbi Brunello di Montalcino Riserva 2020","Tuscany","IT",93,"R",75,3],
+[68,"Château Rauzan-Ségla","Château Rauzan-Ségla Margaux 2019","Bordeaux","FR",96,"R",120,4,"Margaux Second Growth"],
+[68,"Château Canon","Château Canon St.-Emilion 2016","Bordeaux","FR",98,"R",220,5,"St-Émilion Premier Grand Cru Classé, a great vintage"],
+[69,"Torbreck","Torbreck Barossa Valley The Steading 2023","South Australia","AU",94,"R",45,3],
+[69,"Torbreck","Torbreck Shiraz Viognier Barossa RunRig 2022","South Australia","AU",98,"R",250,4,"Torbreck's flagship Shiraz"],
+[70,"Escarpment","Escarpment Pinot Noir Martinborough 2023","Martinborough","NZ",93,"R",40,3],
+[70,"Escarpment","Escarpment Pinot Noir Martinborough Kupe 2023","Martinborough","NZ",94,"R",70,3],
+[71,"Ca'Viola","Ca'Viola Barbaresco Matthias 2022","Piedmont","IT",94,"R",60,2],
+[71,"Ca'Viola","Ca'Viola Barolo Sottocastello di Novello 2021","Piedmont","IT",96,"R",85,2],
+[72,"Château Saint-Pierre","Château Saint-Pierre St.-Julien 2019","Bordeaux","FR",96,"R",90,3],
+[72,"Château Saint-Pierre","Château Saint-Pierre St.-Julien 2017","Bordeaux","FR",93,"R",80,3],
+[73,"Luis Felipe Edwards","Luis Felipe Edwards Valle de Colchagua LFE 900 Single Vineyard Red Blend 2020","Valle Central","CL",93,"R",50,2],
+[73,"Luis Felipe Edwards","Luis Felipe Edwards Valle de Colchagua Doña Bernarda Private Collection 2020","Valle Central","CL",94,"R",45,2],
+[74,"Bodegas Emilio Moro","Bodegas Emilio Moro Ribera del Duero Malleolus de Valderramiro 2021","Castilla y León","ES",93,"R",130,3],
+[74,"Bodegas Emilio Moro","Bodegas Emilio Moro Ribera del Duero Malleolus 2023","Castilla y León","ES",93,"R",55,3],
+[75,"Clos Fourtet","Clos Fourtet St.-Emilion 2016","Bordeaux","FR",98,"R",170,5,"St-Émilion Premier Grand Cru Classé"],
+[75,"Clos Fourtet","Château Poujeaux Moulis-en-Médoc 2022","Bordeaux","FR",94,"R",40,3],
+[76,"Ciacci Piccolomini d'Aragona","Ciacci Piccolomini d'Aragona Brunello di Montalcino 2020","Tuscany","IT",96,"R",65,3],
+[76,"Ciacci Piccolomini d'Aragona","Ciacci Piccolomini d'Aragona Brunello di Montalcino Pianrosso 2020","Tuscany","IT",98,"R",95,3],
+[77,"Château Trotte Vieille","Château Trottevieille St.-Emilion 2021","Bordeaux","FR",96,"R",90,3],
+[77,"Château Batailley","Château Batailley Pauillac 2021","Bordeaux","FR",94,"R",60,3],
+[78,"Fratelli Revello","Fratelli Revello Barolo Gattera 2022","Piedmont","IT",94,"R",60,2],
+[78,"Fratelli Revello","Fratelli Revello Barolo Cerretta 2022","Piedmont","IT",94,"R",60,2],
+[79,"Château Phélan Ségur","Château Phélan Ségur St.-Estèphe 2010","Bordeaux","FR",93,"R",110,3,"A mature bottle from a legendary vintage"],
+[79,"Château Phélan Ségur","Château Phélan Ségur St.-Estèphe 2018","Bordeaux","FR",95,"R",70,3],
+[80,"Eredi Fuligni","Eredi Fuligni Brunello di Montalcino 2020","Tuscany","IT",95,"R",70,3],
+[80,"Eredi Fuligni","Eredi Fuligni Brunello di Montalcino Riserva 2019","Tuscany","IT",97,"R",120,3],
+[81,"Château d'Armailhac","Château d'Armailhac Pauillac 2022","Bordeaux","FR",97,"R",70,4],
+[81,"Château Clerc Milon","Château Clerc Milon Pauillac 2018","Bordeaux","FR",96,"R",110,4,"Mouton Rothschild's Pauillac sibling"],
+[82,"Giodo","Giodo Rosso di Montalcino 2024","Tuscany","IT",94,"R",55,3],
+[82,"Giodo","Giodo Brunello di Montalcino Prètto 2021","Tuscany","IT",97,"R",80,3],
+[83,"Renieri","Renieri Brunello di Montalcino 2021","Tuscany","IT",97,"R",55,2],
+[83,"Renieri","Renieri Brunello di Montalcino Riserva 2020","Tuscany","IT",95,"R",90,2],
+[84,"San Pedro Cachapoal Andes","San Pedro Cabernet Sauvignon Valle de Cachapoal Cabo de Hornos 2022","Valle Central","CL",95,"R",65,3],
+[84,"San Pedro Cachapoal Andes","San Pedro Valle de Cachapoal Altaïr 2022","Valle Central","CL",95,"R",70,3],
+[85,"Domaines Jacques Thienpont","Château L'Hêtre Castillon Côtes de Bordeaux 2023","Bordeaux","FR",94,"R",35,3],
+[85,"Domaines Jacques Thienpont","L’If St.-Emilion 2019","Bordeaux","FR",96,"R",180,4,"From the Thienpont family behind Le Pin"],
+[86,"SassodiSole","SassodiSole Brunello di Montalcino Riserva 2020","Tuscany","IT",94,"R",60,2],
+[86,"SassodiSole","SassodiSole Brunello di Montalcino Sasso di Luna 2021","Tuscany","IT",94,"R",45,2],
+[87,"Viñedos Familia Chadwick","Errazuriz Valle de Aconcagua Don Maximiano Founder's Reserve 2022","Aconcagua","CL",97,"R",110,4],
+[87,"Viñedos Familia Chadwick","Seña Valle de Aconcagua 2023","Aconcagua","CL",99,"R",180,5,"Chadwick's icon, a Berlin Tasting legend"],
+[88,"Château Bélair-Monange","Château Bélair-Monange St.-Emilion Annonce 2022","Bordeaux","FR",93,"R",70,4],
+[88,"Château Bélair-Monange","Château Bélair-Monange St.-Emilion 2022","Bordeaux","FR",99,"R",330,5,"Moueix's Premier Grand Cru Classé, top vintage"],
+[89,"Château Haut-Batailley","Château Haut-Batailley Pauillac 2017","Bordeaux","FR",93,"R",60,3],
+[89,"Château Lynch-Bages","Château Lynch Bages Pauillac 2015","Bordeaux","FR",95,"R",190,5,"Pauillac favourite, now 10 years old"],
+[89,"Château Ormes de Pez","Château Ormes de Pez St.-Estèphe 2020","Bordeaux","FR",92,"R",45,3],
+[90,"Siro Pacenti","Siro Pacenti Brunello di Montalcino Vecchie Vigne 2013","Tuscany","IT",95,"R",120,3,"Aged Brunello, 13 years on"],
+[90,"Siro Pacenti","Siro Pacenti Brunello di Montalcino Vecchie Vigne 2021","Tuscany","IT",98,"R",85,3],
+[91,"Château Ducru-Beaucaillou","La Croix Ducru-Beaucaillou St.-Julien 2022","Bordeaux","FR",95,"R",55,4],
+[91,"Château Ducru-Beaucaillou","Château Ducru-Beaucaillou St.-Julien 2018","Bordeaux","FR",99,"R",260,5,"St-Julien 'super second', great vintage"],
+[92,"Valdicava","Valdicava Brunello di Montalcino Vigna Montosoli 2021","Tuscany","IT",99,"R",250,4,"Montalcino's most famous cru"],
+[92,"Valdicava","Valdicava Brunello di Montalcino 2021","Tuscany","IT",99,"R",120,4],
+[93,"Château Pavie","Château Pavie St.-Emilion 2019","Bordeaux","FR",98,"R",450,5,"St-Émilion Premier Grand Cru Classé, top vintage"],
+[93,"Château Pavie","Arômes de Pavie St.-Emilion 2019","Bordeaux","FR",93,"R",80,4],
+[94,"Erdevik Estate","Erdevik Cabernet Sauvignon Merlot Fruška Gora Marlon Delon 2017","Vojvodina","RS",93,"R",35,1],
+[94,"Erdevik Estate","Erdevik Fruška Gora Grand Trianon 2020","Vojvodina","RS",94,"R",45,1],
+[95,"FUTO Estate","FUTO Napa Valley Oakville 2021","California","US",100,"R",550,4,"JS 100 cult Oakville estate"],
+[95,"FUTO Estate","FUTO Napa Valley Seta 2022","California","US",96,"R",175,4],
+[96,"Famille Perrin","Fleur de Miraval Champagne Petite Fleur Brut Rosé","Champagne","FR",93,"SP",130,4],
+[96,"Famille Perrin","Château de Beaucastel Châteauneuf-du-Pape 2024","Rhône Valley","FR",99,"R",120,5,"The benchmark Châteauneuf-du-Pape"],
+[97,"Arnaldo Caprai","Arnaldo Caprai Montefalco Riserva 2022","Umbria","IT",93,"R",40,3],
+[97,"Arnaldo Caprai","Arnaldo Caprai Montefalco Sagrantino 25 Anni 2021","Umbria","IT",95,"R",90,3],
+[98,"Black Stallion","Black Stallion Napa Valley Bucephalus 2021","California","US",94,"R",100,2],
+[98,"Black Stallion","Black Stallion Cabernet Sauvignon Napa Valley Limited Release 2022","California","US",92,"R",50,2],
+[99,"Pine Ridge Vineyards","Pine Ridge Vineyards Cabernet Sauvignon Napa Valley Stags Leap District 2023","California","US",96,"R",110,3],
+[99,"Seghesio Family Vineyards","Seghesio Family Vineyards Zinfandel Sonoma County Alexander Valley Home Ranch 2023","California","US",94,"R",50,3],
+[100,"Fattoria Le Pupille","Fattoria Le Pupille Toscana Poggio Valente 2023","Tuscany","IT",95,"R",55,3],
+[100,"Fattoria Le Pupille","Fattoria Le Pupille Toscana Saffredi 2023","Tuscany","IT",97,"R",100,3],
+[101,"Penfolds","Penfolds Cabernet Sauvignon Napa Valley Bin 704 2022","California","US",93,"R",60,5],
+[101,"Penfolds","Penfolds Cabernet Shiraz South Australia Bin 389 2023","South Australia","AU",96,"R",90,5,"'Baby Grange'"],
+[102,"Marchesi Antinori","Marchesi Antinori Bolgheri Cont'Ugo 2024","Tuscany","IT",93,"R",40,4],
+[102,"Marchesi Antinori","Marchesi Antinori Bolgheri Superiore Guado Al Tasso 2023","Tuscany","IT",96,"R",130,5,"Antinori's Bolgheri flagship"],
+[103,"Almaviva","Almaviva Puente Alto Epu 2023","Valle Central","CL",94,"R",75,4],
+[103,"Almaviva","Almaviva Puente Alto 2023","Valle Central","CL",97,"R",210,5,"Mouton Rothschild × Concha y Toro icon"],
+[104,"Mazzei","Mazzei Toscana Concerto di Fonterutoli 2023","Tuscany","IT",94,"R",65,4],
+[104,"Mazzei","Mazzei Toscana Siepi 2021","Tuscany","IT",98,"R",120,4],
+[105,"Reputation","Reputation Cabernet Sauvignon Napa Valley 2023","California","US",93,"R",30,1],
+[105,"Method","Method Cabernet Sauvignon Napa Valley 2024","California","US",96,"R",45,1],
+[106,"Tenuta Luce","Tenuta Luce Toscana Luce 2013","Tuscany","IT",97,"R",150,4,"Mature Luce, 13 years on"],
+[106,"Tenuta Luce","Tenuta Luce Toscana Luce 2023","Tuscany","IT",96,"R",120,4],
+[107,"Ornellaia","Ornellaia Bolgheri Superiore 2023","Tuscany","IT",98,"R",250,5,"Bolgheri's most famous estate"],
+[107,"Ornellaia","Ornellaia Bolgheri Superiore 2013","Tuscany","IT",98,"R",320,5,"A rare chance to taste mature Ornellaia"],
+[108,"Vik","Vik Valle de Cachapoal VIK 2022","Valle Central","CL",99,"R",180,4,"Chile's luxury estate flagship"],
+[108,"Vik","Vik Valle de Cachapoal La Piu Belle 2022","Valle Central","CL",96,"R",85,4],
+[109,"Tenuta Sette Ponti","Tenuta Sette Ponti Toscana Crognolo 2023","Tuscany","IT",94,"R",35,3],
+[109,"Tenuta Sette Ponti","Tenuta Sette Ponti Toscana Oreno 2023","Tuscany","IT",98,"R",90,3],
+[110,"Robert Mondavi","Robert Mondavi Winery Cabernet Sauvignon Napa Valley Oakville To Kalon Vineyard 2019","California","US",96,"R",200,5,"Napa's most storied vineyard"],
+[110,"Robert Mondavi","Robert Mondavi Winery Cabernet Sauvignon Napa Valley Oakville The Estates 2021","California","US",94,"R",70,4],
+[111,"Outpost","Outpost Wines Cabernet Sauvignon Napa Valley Howell Mountain 2019","California","US",96,"R",110,3],
+[111,"Quinta do Noval","Quinta do Noval Tawny Port Colheita Single Harvest 2005","Douro","PT",94,"F",90,4],
+[112,"Tenuta di Biserno","Tenuta di Biserno Toscana Colle Mezzano di Biserno 2023","Tuscany","IT",98,"R",300,4,"Biserno's new single-vineyard top wine"],
+[112,"Tenuta di Biserno","Tenuta di Biserno Toscana Biserno 2023","Tuscany","IT",97,"R",140,4],
+[113,"Realm Cellars","Realm Cellars Napa Valley Farella Vineyard 2023","California","US",100,"R",225,4,"JS 100 from a Napa cult producer"],
+[113,"Realm Cellars","Realm Cellars Napa Valley The Bard 2023","California","US",97,"R",150,4],
+[114,"Tenuta Fratini","Fratini Bolgheri Superiore Hortense 2023","Tuscany","IT",97,"R",280,2,"New Bolgheri estate priced with the elite"],
+[114,"Tenuta Fratini","Fratini Bolgheri Superiore Harte 2023","Tuscany","IT",95,"R",140,2],
+[115,"Darioush","Darioush Cabernet Sauvignon Napa Valley 2022","California","US",92,"R",110,4],
+[115,"Darioush","Darioush Cabernet Sauvignon Napa Valley Darius II 2022","California","US",94,"R",650,4,"Darioush's members-only flagship"],
+[116,"Isole e Olena","Isole e Olena Toscana Cepparello 2021","Tuscany","IT",99,"R",110,4,"The pioneering all-Sangiovese Super Tuscan"],
+[117,"Donnafugata","Donnafugata Terre Siciliane Tancredi 2021","Sicily","IT",92,"R",35,3],
+[117,"Donnafugata","Donnafugata Passito di Pantelleria Ben Rye 2023","Sicily","IT",94,"D",50,3],
+[118,"Il Palazzo","Il Palazzo Sangiovese Toscana Cum Sanguis 2021","Tuscany","IT",92,"R",45,2],
+[118,"Il Palazzo","Il Palazzo Vin Santo del Chianti 2021","Tuscany","IT",95,"D",60,2],
+[119,"Fonseca","Fonseca Vintage Port 2017","Douro","PT",95,"F",130,4,"Declared vintage Port"],
+[119,"Taylor's","Taylor’s Port 20 Year Old Tawny","Douro","PT",95,"F",70,4],
+["F","Mirae","Mirae Chardonnay Marlborough Clayvin 2025","Marlborough","NZ",null,"W",60,2,"James Suckling's own label"],
+["F","Mirae","Mirae Pinot Noir Martinborough Mirae Vineyard 2025","Martinborough","NZ",null,"R",90,2,"From James Suckling's own Martinborough vineyard"]
+];
+
+const COUNTRY={FR:"France",IT:"Italy",US:"USA",CL:"Chile",AR:"Argentina",ES:"Spain",AU:"Australia",NZ:"New Zealand",CA:"Canada",PT:"Portugal",GR:"Greece",SI:"Slovenia",RS:"Serbia",UY:"Uruguay",CN:"China"};
+const STYLE={SP:{l:"Sparkling",o:0},W:{l:"White",o:1},B:{l:"Rosé",o:2},R:{l:"Red",o:3},D:{l:"Dessert",o:4},F:{l:"Fortified",o:5}};
+const FAME={5:"Icon",4:"Renowned",3:"Established",2:"Rising",1:"Discovery"};
+const HKD=7.8;
+
+function prestigeOf(w){
+  const p=Math.max(0,Math.min(1,(Math.log(w.usd)-Math.log(20))/(Math.log(650)-Math.log(20))));
+  const f=(w.fame-1)/4;
+  const s=w.pts?Math.max(0,Math.min(1,(w.pts-90)/10)):0.3;
+  return Math.round(100*(0.5*p+0.35*f+0.15*s));
+}
+const WINES=[]; const BY_ID={}; const seen={};
+RAW.forEach(r=>{
+  const t=r[0]; seen[t]=(seen[t]||0)+1;
+  const w={id:t+"-"+seen[t],t:t,walk:t==="F"?0:t,winery:r[1],name:r[2],region:r[3],cc:r[4],pts:r[5],type:r[6],usd:r[7],fame:r[8],note:r[9]||""};
+  w.pr=prestigeOf(w); WINES.push(w); BY_ID[w.id]=w;
+});
+const TABLES={};
+WINES.forEach(w=>{ (TABLES[w.t]=TABLES[w.t]||{t:w.t,wines:[]}).wines.push(w); });
+Object.values(TABLES).forEach(T=>{
+  T.name=[...new Set(T.wines.map(w=>w.winery))].join(" · ");
+  T.top=Math.max(...T.wines.map(w=>w.pr));
+  T.types=[...new Set(T.wines.map(w=>w.type))].sort((a,b)=>STYLE[a].o-STYLE[b].o);
+});
+const tLabel=t=>t==="F"?"Foyer":"Table "+t;
+const tShort=t=>t==="F"?"Foyer":"T"+t;
+
+/* ---------- Floor plan coordinates (traced from the cheat-sheet floorplan) ---------- */
+const POS={};
+const put=(list,x,y0,dy,side)=>list.forEach((t,i)=>POS[t]=[x,y0+dy*i,side]);
+put([27,26,25,24,23,22,21],333,615,27,"r");
+put([20,19,18,17,16,15,14],333,820,27,"r");
+put([13,12,11,10,9,8,7,6,5,4,3],383,1036,27.1,"r");
+POS[2]=[538,1262,"b"]; POS[1]=[566,1262,"b"];
+[[71,1237],[72,1210],[73,1183],[74,1156],[75,1129],[76,1102],[77,1074],[78,1047],[79,1018],[80,992],[81,966],[82,940],[83,914],[84,888],[85,835],[86,805],[87,777],[88,750],[89,722],[90,695],[91,668],[92,640],[93,613],[94,586]].forEach(([t,y])=>POS[t]=[515,y,"l"]);
+POS[95]=[538,566,"t"]; POS[96]=[566,566,"t"];
+[[97,586],[98,613],[99,640],[100,667],[101,695],[102,722],[103,749],[104,805],[105,835],[106,865],[107,891],[108,919],[109,946],[110,973],[111,1000],[112,1045],[113,1074],[114,1102],[115,1129],[116,1156],[117,1183],[118,1210],[119,1237]].forEach(([t,y])=>POS[t]=[589,y,"r"]);
+[28,29,30,31].forEach((t,i)=>POS[t]=[395+28*i,522,"b"]);
+[32,33,34,35,36,37].forEach((t,i)=>POS[t]=[494+28.4*i,402,"b"]);
+put([38,39,40,41,42,43,44,45,46,47],680,451,27.1,"r");
+put([48,49,50,51,52,53,54,55,56,57],680,741,27.1,"r");
+put([58,59,60,61,62,63,64,65,66,67,68],680,1030,27,"r");
+POS[70]=[629,1322,"b"]; POS[69]=[657,1322,"b"];
+POS.F=[300,1430,"r"];
+const ENTRY=[552,1398];
+
+/* ---------- State ---------- */
+const LS_KEY="gwhk2026-plan-v1";
+function defaultState(){
+  return {v:1,plan:topIds("prestige",20),mode:"prestige",sweetLast:true,custom:[],tasted:[],rating:{},notes:{},cur:"HKD",updatedAt:0};
+}
+function normalize(s){
+  const d=defaultState();
+  if(!s||typeof s!=="object") return d;
+  const out=Object.assign(d,s);
+  out.plan=Array.isArray(out.plan)?[...new Set(out.plan.filter(id=>BY_ID[id]))]:[];
+  out.tasted=Array.isArray(out.tasted)?out.tasted.filter(id=>BY_ID[id]):[];
+  out.custom=Array.isArray(out.custom)?out.custom.filter(k=>typeof k==="string"):[];
+  if(!["prestige","route","custom"].includes(out.mode)) out.mode="prestige";
+  if(!["HKD","USD"].includes(out.cur)) out.cur="HKD";
+  out.rating=out.rating&&typeof out.rating==="object"?out.rating:{};
+  out.notes=out.notes&&typeof out.notes==="object"?out.notes:{};
+  out.sweetLast=out.sweetLast!==false;
+  return out;
+}
+function loadLocal(){ try{ const s=localStorage.getItem(LS_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function saveLocal(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(state)); }catch(e){} }
+let state=null;
+
+const ui={tab:"plan",q:"",sort:"prestige",styles:new Set(),country:"all",minPts:0,inPlan:"all",limit:60,
+  confirm:null,autoN:20,autoBy:"prestige",open:new Set(),mapMode:"route",zoom:false,hl:null,sheet:null,copyText:null};
+
+function commit(opts){
+  state.updatedAt=Date.now();
+  saveLocal(); queueCloudSave();
+  if(!(opts&&opts.quiet)) renderAll();
+}
+
+/* ---------- Helpers ---------- */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function money(usd){
+  if(state.cur==="USD") return "≈US$"+usd.toLocaleString("en-US");
+  const h=usd*HKD; const r=h>=1000?Math.round(h/50)*50:Math.round(h/10)*10;
+  return "≈HK$"+r.toLocaleString("en-US");
+}
+const inPlan=id=>state.plan.includes(id);
+const isTasted=id=>state.tasted.includes(id);
+const SORTS={
+  prestige:(a,b)=>b.pr-a.pr||b.usd-a.usd||(b.pts||0)-(a.pts||0),
+  price:(a,b)=>b.usd-a.usd||b.pr-a.pr,
+  fame:(a,b)=>b.fame-a.fame||b.pr-a.pr,
+  pts:(a,b)=>(b.pts||0)-(a.pts||0)||b.pr-a.pr,
+  table:(a,b)=>a.walk-b.walk||STYLE[a.type].o-STYLE[b.type].o
+};
+function topIds(by,n){ return [...WINES].sort(SORTS[by]||SORTS.prestige).slice(0,n).map(w=>w.id); }
+const ICON={
+  plus:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  check:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  up:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 10l4.5-4.5 4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  down:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6l4.5 4.5 4.5-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+state=normalize(loadLocal());
+
+/* ---------- Plan logic ---------- */
+function buildStops(mode){
+  mode=mode||state.mode;
+  const groups=new Map();
+  state.plan.forEach(id=>{
+    const w=BY_ID[id]; if(!w) return;
+    const sweet=state.sweetLast&&(w.type==="D"||w.type==="F");
+    const key=String(w.t)+(sweet?"s":"");
+    if(!groups.has(key)) groups.set(key,{key,t:w.t,sweet,wines:[]});
+    groups.get(key).wines.push(w);
+  });
+  const stops=[...groups.values()];
+  stops.forEach(s=>{ s.wines.sort((a,b)=>STYLE[a.type].o-STYLE[b.type].o||b.pr-a.pr); s.top=Math.max(...s.wines.map(w=>w.pr)); s.walk=s.t==="F"?0:s.t; s.name=[...new Set(s.wines.map(w=>w.winery))].join(" · "); });
+  const byPrestige=(a,b)=>(a.sweet-b.sweet)||b.top-a.top||a.walk-b.walk;
+  if(mode==="route") stops.sort((a,b)=>(a.sweet-b.sweet)||a.walk-b.walk);
+  else if(mode==="custom"){
+    const idx=new Map(state.custom.map((k,i)=>[k,i]));
+    stops.sort((a,b)=>{ const ia=idx.has(a.key)?idx.get(a.key):1e6, ib=idx.has(b.key)?idx.get(b.key):1e6; return ia-ib||byPrestige(a,b); });
+  } else stops.sort(byPrestige);
+  stops.forEach((s,i)=>{ s.n=i+1; s.done=s.wines.every(w=>isTasted(w.id)); });
+  return stops;
+}
+function walkLen(stops){
+  let d=0,p=ENTRY;
+  stops.forEach(s=>{ const q=POS[s.t]; d+=Math.hypot(q[0]-p[0],q[1]-p[1]); p=q; });
+  return d;
+}
+function moveStop(key,dir){
+  const keys=buildStops().map(s=>s.key); const i=keys.indexOf(key), j=i+dir;
+  if(i<0||j<0||j>=keys.length) return;
+  [keys[i],keys[j]]=[keys[j],keys[i]];
+  state.custom=keys; state.mode="custom"; commit();
+}
+function toggleWine(id){
+  if(inPlan(id)) state.plan=state.plan.filter(x=>x!==id); else state.plan.push(id);
+  commit();
+  toast(inPlan(id)?"Added to plan":"Removed from plan");
+}
+function toggleTasted(id){
+  if(isTasted(id)) state.tasted=state.tasted.filter(x=>x!==id); else state.tasted.push(id);
+  commit();
+}
+
+/* ---------- Render: header ---------- */
+function renderHeader(){
+  const n=state.plan.length, done=state.plan.filter(isTasted).length;
+  document.getElementById("progTxt").innerHTML=n?`<b>${done}</b> of <b>${n}</b> pours tasted`:"No wines planned yet";
+  document.getElementById("progBar").style.width=(n?Math.round(100*done/n):0)+"%";
+  document.getElementById("cPlan").textContent=n;
+  document.getElementById("cWines").textContent=WINES.length;
+  ["plan","wines","map"].forEach(v=>{
+    const b=document.getElementById("tab-"+v); b.setAttribute("aria-selected",ui.tab===v?"true":"false");
+    document.getElementById("view-"+v).hidden=ui.tab!==v;
+  });
+}
+
+/* ---------- Render: plan ---------- */
+function autoBar(){
+  const nOpts=[10,15,20,25,30,40,50].map(n=>`<option value="${n}"${ui.autoN===n?" selected":""}>${n}</option>`).join("");
+  const byOpts=[["prestige","prestige"],["price","price"],["fame","fame"],["pts","JS points"]].map(([v,l])=>`<option value="${v}"${ui.autoBy===v?" selected":""}>${l}</option>`).join("");
+  let c="";
+  if(ui.confirm==="build") c=`<div class="confirm"><span>Replace your ${state.plan.length} picks with the top ${ui.autoN} by ${ui.autoBy==="pts"?"JS points":ui.autoBy}? Tasted marks and notes are kept.</span>
+    <button class="btn pri" data-act="doBuild" data-how="replace">Replace</button><button class="btn" data-act="doBuild" data-how="add">Add to mine</button><button class="btn quiet" data-act="cancel">Cancel</button></div>`;
+  return `<div class="panel"><div class="auto"><span>Auto-pick the top</span>
+    <select id="autoN" aria-label="Number of wines">${nOpts}</select><span>wines by</span>
+    <select id="autoBy" aria-label="Rank by">${byOpts}</select>
+    <button class="btn pri" data-act="build">Build plan</button></div>${c}</div>`;
+}
+function renderPlan(){
+  const el=document.getElementById("view-plan");
+  if(!state.plan.length){
+    el.innerHTML=`<div class="plan-head"><div><h2>Your tasting plan is empty</h2>
+      <p class="lede">Build one automatically from the most famous and expensive bottles, or add wines one by one from the full list.</p></div>${autoBar()}</div>
+      <div class="empty"><p>The event pours ${WINES.length} wines from ${Object.keys(TABLES).length} tables. At about three minutes a pour, 25 to 40 wines is a full evening.</p>
+      <button class="btn" data-act="tab" data-v="wines">Browse all wines</button></div>`;
+    return;
+  }
+  const stops=buildStops();
+  const nW=state.plan.length;
+  const pts=state.plan.map(id=>BY_ID[id].pts).filter(Boolean);
+  const avg=pts.length?(pts.reduce((a,b)=>a+b,0)/pts.length).toFixed(1):"–";
+  const mins=nW*3;
+  const ratio=walkLen(stops)/Math.max(1,walkLen(buildStops("route")));
+  let hint;
+  if(state.mode==="route") hint="Follows the organiser's table numbering, which is laid out as a tasting sequence with the least walking.";
+  else if(ratio>1.15) hint=`Big names first. This order walks about <b>${ratio.toFixed(1)}×</b> as far as following the floor route; the room is one hall, so that is a few extra minutes.`;
+  else hint="Big names first, and it happens to follow the room well.";
+  const next=stops.find(s=>!s.done);
+  const nextHTML=next?`<div class="next" aria-live="polite"><div class="big num">${next.n}</div>
+      <div class="lbl">Next stop</div>
+      <div class="ttl">${esc(tLabel(next.t))} · ${esc(next.name)}${next.sweet?" (sweet wines)":""}</div>
+      <ul>${next.wines.filter(w=>!isTasted(w.id)).map(w=>`<li><span class="dot t-${w.type}"></span> ${esc(w.name)}</li>`).join("")}</ul>
+      <div class="acts"><button class="btn pri" data-act="stopDone" data-k="${esc(next.key)}">Mark tasted</button><button class="btn" data-act="showMap" data-t="${esc(next.t)}">Show on map</button></div></div>`
+    :`<div class="next done"><div class="big">✓</div><div class="lbl">All done</div><div class="ttl">Every wine in your plan is tasted.</div><ul></ul><div class="acts"><button class="btn" data-act="tab" data-v="wines">Find more wines</button></div></div>`;
+  const seg=[["prestige","Prestige first"],["route","Floor route"],["custom","My order"]].map(([m,l])=>`<button data-act="mode" data-m="${m}" aria-pressed="${state.mode===m}">${l}</button>`).join("");
+  const rows=stops.map((s,i)=>{
+    const tags=[...new Set(s.wines.map(w=>FAME[w.fame]).filter((f,j)=>s.wines[j].fame>=5))];
+    const pours=s.wines.map(w=>{
+      const t=isTasted(w.id), r=state.rating[w.id]||0, open=ui.open.has(w.id);
+      const note=(state.notes[w.id]||"");
+      return `<li class="pour${t?" tasted":""}">
+        <button class="tick" data-act="tasted" data-id="${w.id}" aria-pressed="${t}" aria-label="${t?"Unmark":"Mark"} ${esc(w.name)} as tasted">${ICON.check}</button>
+        <div><button class="pname" data-act="openNote" data-id="${w.id}" aria-expanded="${open}">${esc(w.name)}</button>
+          <div class="pmeta num"><span><span class="dot t-${w.type}"></span> ${STYLE[w.type].l}</span>${w.pts?`<span>JS ${w.pts}</span>`:""}<span>${money(w.usd)}</span>${r?`<span class="stars" aria-label="Your rating ${r} of 5">${"★".repeat(r)}</span>`:""}${note&&!open?`<span>“${esc(note.length>40?note.slice(0,40)+"…":note)}”</span>`:""}</div></div>
+        <button class="x" data-act="remove" data-id="${w.id}" aria-label="Remove ${esc(w.name)} from plan">×</button>
+        ${open?`<div class="notes"><div class="rate" role="group" aria-label="Your rating">${[1,2,3,4,5].map(k=>`<button class="${k<=r?"on":""}" data-act="rate" data-id="${w.id}" data-r="${k}" aria-label="${k} star${k>1?"s":""}">★</button>`).join("")}<span style="margin-left:6px">${r?"Your rating":"Rate it"}</span></div>
+          <textarea id="note-${w.id}" data-note="${w.id}" placeholder="Tasting note: aromas, structure, would you buy it?">${esc(note)}</textarea></div>`:""}
+      </li>`;}).join("");
+    return `<li class="stop${s.done?" all-done":""}">
+      <div class="n num">${s.n}</div>
+      <div><div class="stop-h"><span class="tbl">${esc(tLabel(s.t))}</span><span class="wy">${esc(s.name)}</span>${s.sweet?'<span class="tag">Sweet & fortified, saved for last</span>':""}${tags.length?`<span class="tag">${tags.join(" · ")}</span>`:""}</div>
+        <ul class="pours">${pours}</ul></div>
+      <div class="stop-ctl"><button class="ib" data-act="up" data-k="${esc(s.key)}" aria-label="Move earlier"${i===0?" disabled":""}>${ICON.up}</button><button class="ib" data-act="down" data-k="${esc(s.key)}" aria-label="Move later"${i===stops.length-1?" disabled":""}>${ICON.down}</button></div>
+    </li>`;
+  }).join("");
+  const clearC=ui.confirm==="clear"?`<div class="confirm" style="flex-basis:100%"><span>Remove all ${nW} wines from your plan? Notes and ratings are kept.</span><button class="btn pri" data-act="doClear">Clear plan</button><button class="btn quiet" data-act="cancel">Cancel</button></div>`:"";
+  const copyBox=ui.copyText!==null?`<textarea class="copybox" id="copyBox" readonly aria-label="Plan as text">${esc(ui.copyText)}</textarea>`:"";
+  el.innerHTML=`<div class="plan-head">
+      ${nextHTML}
+      <div class="ctl-row"><span class="seg" role="group" aria-label="Order">${seg}</span>
+        <label class="chk"><input type="checkbox" id="sweetLast"${state.sweetLast?" checked":""}> Sweet & fortified last</label></div>
+      <p class="hint">${hint}</p>
+      <div class="stats num"><span><b>${nW}</b> wines</span><span><b>${stops.length}</b> stops</span><span>avg <b>JS ${avg}</b></span><span>about <b>${mins>=60?Math.floor(mins/60)+" h "+(mins%60?mins%60+" min":""):mins+" min"}</b> at 3 min a pour</span></div>
+    </div>
+    <ol class="stops">${rows}</ol>
+    <div class="plan-foot">
+      <button class="btn" data-act="copy">Copy plan as text</button>
+      <button class="btn quiet" data-act="clearTasted">Reset tasted marks</button>
+      <button class="btn quiet" data-act="askClear">Clear plan</button>
+      ${clearC}
+    </div>
+    ${copyBox}
+    <div style="margin-top:22px">${autoBar()}</div>
+    <div class="tips">
+      <p><b>Go big early</b>Crowds build at the famous tables as the evening goes on. Your first 45 minutes are the best window for the top five.</p>
+      <p><b>Spit and sip water</b>Two dozen JS 95+ reds add up quickly. A pour is roughly 30 ml; spitting keeps the last wine as clear as the first.</p>
+      <p><b>Save the sweet stuff</b>Port, Vin Santo and Passito coat the palate, so the plan keeps them for the end unless you switch that off.</p>
+    </div>`;
+}
+
+/* ---------- Render: wine list ---------- */
+function filtered(){
+  const q=ui.q.trim().toLowerCase();
+  let list=WINES.filter(w=>{
+    if(ui.styles.size){ const st=(w.type==="D"||w.type==="F")?"DF":w.type; if(!ui.styles.has(st)) return false; }
+    if(ui.country!=="all"&&w.cc!==ui.country) return false;
+    if(ui.minPts&&(!w.pts||w.pts<ui.minPts)) return false;
+    if(ui.inPlan==="in"&&!inPlan(w.id)) return false;
+    if(ui.inPlan==="out"&&inPlan(w.id)) return false;
+    if(q){ const hay=(w.name+" "+w.winery+" "+w.region+" "+COUNTRY[w.cc]+" "+tLabel(w.t)+" t"+w.t).toLowerCase(); if(!q.split(/\s+/).every(p=>hay.includes(p))) return false; }
+    return true;
+  });
+  return list.sort(SORTS[ui.sort]);
+}
+function wineRow(w,rank,inSheet){
+  const p=inPlan(w.id);
+  return `<li class="wrow${p?" in":""}">
+    ${inSheet?"":`<div class="rk num">${rank}</div>`}
+    <div>
+      <div class="wname"><span class="dot t-${w.type}" title="${STYLE[w.type].l}"></span><span>${esc(w.name)}</span></div>
+      <div class="wsub">${esc(w.winery)} · ${inSheet?esc(tLabel(w.t)):`<button data-act="openTable" data-t="${esc(w.t)}">${esc(tLabel(w.t))}</button>`} · ${esc(w.region)}, ${esc(COUNTRY[w.cc])}</div>
+      ${w.note?`<div class="wnote">${esc(w.note)}</div>`:""}
+      <div class="wnums num"><span class="pts">${w.pts?`<small>JS</small>${w.pts}`:'<small>JS</small>n/a'}</span><span class="price">${money(w.usd)}</span><span class="pr mono">prestige ${w.pr}</span>${w.fame>=4?`<span class="fame f${w.fame}">${FAME[w.fame]}</span>`:""}</div>
+    </div>
+    <button class="add" data-act="toggle" data-id="${w.id}" aria-pressed="${p}" aria-label="${p?"Remove from":"Add to"} plan: ${esc(w.name)}">${p?ICON.check:ICON.plus}</button>
+  </li>`;
+}
+function renderWines(){
+  const chips=[["SP","Sparkling"],["W","White"],["B","Rosé"],["R","Red"],["DF","Sweet & fortified"]]
+    .map(([k,l])=>`<button class="chip" data-act="style" data-s="${k}" aria-pressed="${ui.styles.has(k)}"><span class="dot t-${k==="DF"?"D":k}"></span>${l}</button>`).join("");
+  document.getElementById("styleChips").innerHTML=chips;
+  document.getElementById("curSeg").innerHTML=["HKD","USD"].map(c=>`<button data-act="cur" data-c="${c}" aria-pressed="${state.cur===c}">${c==="HKD"?"HK$":"US$"}</button>`).join("");
+  const list=filtered();
+  const shown=list.slice(0,ui.limit);
+  const sortName={prestige:"prestige",price:"price",fame:"fame",pts:"JS points",table:"table number"}[ui.sort];
+  document.getElementById("count").textContent=`${list.length} wine${list.length===1?"":"s"} · sorted by ${sortName}`;
+  document.getElementById("wl").innerHTML=shown.map((w,i)=>wineRow(w,i+1)).join("")||`<li class="empty"><p>No wines match these filters.</p></li>`;
+  document.getElementById("moreBox").innerHTML=list.length>shown.length?`<button class="btn" data-act="more">Show ${Math.min(60,list.length-shown.length)} more</button>`:"";
+}
+
+/* ---------- Render: map ---------- */
+function mapSVG(stops){
+  const stepOf={}, doneOf={};
+  stops.forEach(s=>{ if(!(s.t in stepOf)) stepOf[s.t]=s.n; doneOf[s.t]=(doneOf[s.t]!==false)&&s.done; });
+  const heat=ui.mapMode==="heat";
+  let g="";
+  g+=`<polygon class="room" points="462,335 672,335 672,422 732,422 742,1000 712,1392 420,1392 420,1368 352,1368 352,1015 280,1015 280,490 462,490"/>`;
+  [458,552,650].forEach(x=>{ g+=`<path class="arr" d="M${x} 1432 L${x} 1404 M${x-6} 1411 L${x} 1404 L${x+6} 1411"/>`; });
+  g+=`<text class="ent" x="552" y="1452" text-anchor="middle">ENTRANCE</text>`;
+  if(!heat&&stops.length){
+    const pts=[ENTRY].concat(stops.map(s=>POS[s.t])).map(p=>p[0]+","+p[1]).join(" ");
+    g+=`<polyline class="route" points="${pts}"/>`;
+  }
+  Object.values(TABLES).forEach(T=>{
+    const [x,y,side]=POS[T.t]; const step=stepOf[T.t];
+    let mark;
+    if(heat){
+      const op=T.top>=80?1:T.top>=70?.75:T.top>=60?.5:T.top>=50?.3:.14;
+      mark=`<rect class="heat" x="${x-8}" y="${y-8}" width="16" height="16" rx="3" fill-opacity="${op}"/>`;
+    } else if(step){
+      mark=`<circle class="badge${doneOf[T.t]?" done":""}" cx="${x}" cy="${y}" r="12"/><text class="btxt" x="${x}" y="${y+4.2}" text-anchor="middle">${step}</text>`;
+    } else {
+      const [a,b]=[T.types[0],T.types[T.types.length-1]];
+      mark=a===b?`<rect class="f-${a}" x="${x-7}" y="${y-7}" width="14" height="14" rx="2"/>`
+        :`<polygon class="f-${a}" points="${x-7},${y-7} ${x+7},${y-7} ${x-7},${y+7}"/><polygon class="f-${b}" points="${x+7},${y-7} ${x+7},${y+7} ${x-7},${y+7}"/>`;
+    }
+    const off=(step&&!heat)?16:12;
+    const lab=T.t==="F"?"Foyer · Mirae":String(T.t);
+    let tx=x+off,ty=y+4,anc="start";
+    if(side==="l"){tx=x-off;anc="end";}
+    else if(side==="b"){tx=x;ty=y+off+11;anc="middle";}
+    else if(side==="t"){tx=x;ty=y-off-3;anc="middle";}
+    const on=step||(heat&&T.top>=70);
+    const hl=ui.hl!==null&&String(ui.hl)===String(T.t)?`<circle class="hl" cx="${x}" cy="${y}" r="17"/>`:"";
+    g+=`<g>${hl}${mark}<text class="tlab${on?" on":""}" x="${tx}" y="${ty}" text-anchor="${anc}">${esc(lab)}</text>
+      <rect class="hit" data-act="openTable" data-t="${esc(T.t)}" x="${x-18}" y="${y-13}" width="${side==="l"||side==="r"?54:36}" height="26" transform="${side==="l"?`translate(-18 0)`:""}"><title>${esc(tLabel(T.t)+": "+T.name)}</title></rect></g>`;
+  });
+  return `<svg viewBox="262 330 500 1140" role="img" aria-label="Floor plan of the tasting hall with your route">${g}</svg>`;
+}
+function renderMap(){
+  const el=document.getElementById("view-map");
+  const stops=buildStops();
+  const legend=ui.mapMode==="heat"
+    ? `<div class="legend"><span>Darker squares hold more prestigious wines. Tap any table to see what it pours.</span></div>`
+    : `<div class="legend">${Object.entries(STYLE).map(([k,v])=>`<span><span class="dot t-${k}"></span>${v.l}</span>`).join("")}<span><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="7" class="badge"/></svg>Your stop</span><span><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="7" class="badge done"/></svg>Tasted</span></div>`;
+  const list=stops.length?`<ol class="route-list">${stops.map(s=>`<li class="${s.done?"done":""}"><button data-act="openTable" data-t="${esc(s.t)}"><span class="s num">${s.n}</span><span class="t">${esc(tShort(s.t))}</span><span class="w">${esc(s.name)}${s.sweet?" (sweet)":""}</span></button></li>`).join("")}</ol>`
+    :`<p class="hint">Your plan is empty. Tap a table on the map to add its wines.</p>`;
+  el.innerHTML=`<div class="ctl-row" style="margin-bottom:6px">
+      <span class="seg" role="group" aria-label="Map view"><button data-act="mapMode" data-m="route" aria-pressed="${ui.mapMode==="route"}">My route</button><button data-act="mapMode" data-m="heat" aria-pressed="${ui.mapMode==="heat"}">Prestige heat</button></span>
+      <button class="btn" data-act="zoom" aria-pressed="${ui.zoom}">${ui.zoom?"Fit to screen":"Zoom in"}</button>
+    </div>
+    ${legend}
+    <div class="map-grid">
+      <div class="mapbox${ui.zoom?" zoom":""}" id="mapbox">${mapSVG(stops)}</div>
+      <div><h3 style="margin-bottom:8px">Route · ${stops.length} stops</h3>${list}
+        <p class="hint" style="margin-top:12px">Producer tables are numbered in the organiser's recommended tasting order. Sparkling starts at tables 1–2 by the entrance; ports finish at 119.</p></div>
+    </div>`;
+}
+
+/* ---------- Sheet (table details) ---------- */
+function renderSheet(){
+  const root=document.getElementById("sheetRoot");
+  if(ui.sheet===null){ root.innerHTML=""; return; }
+  const T=TABLES[ui.sheet]; if(!T){ ui.sheet=null; root.innerHTML=""; return; }
+  const stops=buildStops().filter(s=>String(s.t)===String(T.t));
+  const where=stops.length?`Stop ${stops.map(s=>s.n).join(" and ")} in your plan`:"Not in your plan yet";
+  const all=T.wines.every(w=>inPlan(w.id));
+  root.innerHTML=`<div class="scrim" data-act="closeSheet"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="sheet-in">
+      <div class="sheet-h"><div><h3>${esc(tLabel(T.t))} · ${where}</h3><h2 id="sheetTitle" tabindex="-1" style="margin-top:4px">${esc(T.name)}</h2></div>
+        <button class="btn quiet" data-act="closeSheet">Close</button></div>
+      <ol class="wl">${T.wines.slice().sort((a,b)=>STYLE[a.type].o-STYLE[b.type].o).map(w=>wineRow(w,0,true)).join("")}</ol>
+      <div class="plan-foot"><button class="btn${all?"":" pri"}" data-act="tableAll" data-t="${esc(T.t)}">${all?"Remove table from plan":"Add every wine at this table"}</button></div>
+    </div></div>`;
+}
+
+/* ---------- Toast ---------- */
+let toastTimer=null;
+function toast(msg){
+  const r=document.getElementById("toastRoot");
+  r.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ r.innerHTML=""; },1600);
+}
+
+function renderAll(){
+  renderHeader();
+  if(ui.tab==="plan") renderPlan();
+  if(ui.tab==="wines") renderWines();
+  if(ui.tab==="map") renderMap();
+  renderSheet();
+}
+
+/* ---------- Events ---------- */
+function setTab(v,push){
+  if(!["plan","wines","map"].includes(v)) v="plan";
+  ui.tab=v; ui.confirm=null; ui.copyText=null;
+  if(push&&location.hash!=="#"+v){ try{ history.replaceState(null,"","#"+v); }catch(e){ location.hash=v; } }
+  renderAll(); window.scrollTo(0,0);
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const a=b.dataset.act, id=b.dataset.id;
+  switch(a){
+    case "tab": setTab(b.dataset.v,true); break;
+    case "toggle": toggleWine(id); break;
+    case "tasted": toggleTasted(id); break;
+    case "remove": state.plan=state.plan.filter(x=>x!==id); ui.open.delete(id); commit(); toast("Removed from plan"); break;
+    case "stopDone": { const s=buildStops().find(s=>s.key===b.dataset.k); if(s){ s.wines.forEach(w=>{ if(!isTasted(w.id)) state.tasted.push(w.id); }); commit(); toast(tLabel(s.t)+" tasted"); } break; }
+    case "up": moveStop(b.dataset.k,-1); break;
+    case "down": moveStop(b.dataset.k,1); break;
+    case "mode": {
+      const m=b.dataset.m;
+      if(m==="custom"&&state.mode!=="custom") state.custom=buildStops().map(s=>s.key);
+      state.mode=m; commit(); break; }
+    case "openNote": ui.open.has(id)?ui.open.delete(id):ui.open.add(id); renderPlan(); if(ui.open.has(id)){ const t=document.getElementById("note-"+id); if(t) t.focus({preventScroll:true}); } break;
+    case "rate": { const r=+b.dataset.r; state.rating[id]=state.rating[id]===r?0:r; commit(); break; }
+    case "build": ui.autoN=+document.getElementById("autoN").value; ui.autoBy=document.getElementById("autoBy").value;
+      if(state.plan.length){ ui.confirm="build"; renderPlan(); } else { state.plan=topIds(ui.autoBy,ui.autoN); commit(); toast("Plan built"); } break;
+    case "doBuild": { const ids=topIds(ui.autoBy,ui.autoN);
+      if(b.dataset.how==="add"){ ids.forEach(x=>{ if(!inPlan(x)) state.plan.push(x); }); } else { state.plan=ids; state.custom=[]; if(state.mode==="custom") state.mode="prestige"; }
+      ui.confirm=null; commit(); toast("Plan updated"); break; }
+    case "cancel": ui.confirm=null; renderAll(); break;
+    case "askClear": ui.confirm="clear"; renderPlan(); break;
+    case "doClear": state.plan=[]; state.custom=[]; ui.confirm=null; commit(); break;
+    case "clearTasted": state.tasted=[]; commit(); toast("Tasted marks reset"); break;
+    case "copy": copyPlan(); break;
+    case "style": { const s=b.dataset.s; ui.styles.has(s)?ui.styles.delete(s):ui.styles.add(s); ui.limit=60; renderWines(); break; }
+    case "cur": state.cur=b.dataset.c; commit(); break;
+    case "more": ui.limit+=60; renderWines(); break;
+    case "openTable": ui.sheet=b.dataset.t==="F"?"F":+b.dataset.t; renderSheet(); { const h=document.getElementById("sheetTitle"); if(h) h.focus({preventScroll:true}); } break;
+    case "closeSheet": ui.sheet=null; renderSheet(); break;
+    case "tableAll": { const T=TABLES[b.dataset.t==="F"?"F":+b.dataset.t]; const all=T.wines.every(w=>inPlan(w.id));
+      if(all) state.plan=state.plan.filter(x=>!T.wines.some(w=>w.id===x)); else T.wines.forEach(w=>{ if(!inPlan(w.id)) state.plan.push(w.id); });
+      commit(); toast(all?"Table removed":"Table added"); break; }
+    case "showMap": ui.hl=b.dataset.t==="F"?"F":+b.dataset.t; ui.mapMode="route"; setTab("map",true); break;
+    case "mapMode": ui.mapMode=b.dataset.m; renderMap(); break;
+    case "zoom": ui.zoom=!ui.zoom; renderMap(); break;
+  }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="sweetLast"){ state.sweetLast=t.checked; commit(); }
+  else if(t.id==="sort"){ ui.sort=t.value; ui.limit=60; renderWines(); }
+  else if(t.id==="country"){ ui.country=t.value; ui.limit=60; renderWines(); }
+  else if(t.id==="minPts"){ ui.minPts=+t.value; ui.limit=60; renderWines(); }
+  else if(t.id==="inPlan"){ ui.inPlan=t.value; ui.limit=60; renderWines(); }
+  else if(t.id==="autoN"){ ui.autoN=+t.value; }
+  else if(t.id==="autoBy"){ ui.autoBy=t.value; }
+});
+let noteTimer=null;
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.id==="q"){ ui.q=t.value; ui.limit=60; renderWines(); }
+  else if(t.dataset&&t.dataset.note){ state.notes[t.dataset.note]=t.value; clearTimeout(noteTimer); noteTimer=setTimeout(()=>commit({quiet:true}),600); }
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&ui.sheet!==null){ ui.sheet=null; renderSheet(); } });
+window.addEventListener("hashchange",()=>{ const v=location.hash.slice(1); if(v&&v!==ui.tab) setTab(v,false); });
+
+function copyPlan(){
+  const stops=buildStops();
+  const lines=["Great Wines of the World HK · 30 Oct 2026 · my tasting plan",""];
+  stops.forEach(s=>{
+    lines.push(`${s.n}. ${tLabel(s.t)}: ${s.name}${s.sweet?" (sweet, last)":""}`);
+    s.wines.forEach(w=>lines.push(`   ${isTasted(w.id)?"[x]":"[ ]"} ${w.name}${w.pts?" · JS "+w.pts:""} · ${money(w.usd)}`));
+  });
+  const text=lines.join("\n");
+  const fallback=()=>{ ui.copyText=text; renderPlan(); const t=document.getElementById("copyBox"); if(t){ t.focus(); t.select(); } toast("Select the text below to copy"); };
+  try{ navigator.clipboard.writeText(text).then(()=>{ ui.copyText=null; toast("Plan copied"); },fallback); }catch(err){ fallback(); }
+}
+
+/* ---------- Country select ---------- */
+(function(){
+  const counts={}; WINES.forEach(w=>counts[w.cc]=(counts[w.cc]||0)+1);
+  const opts=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).map(c=>`<option value="${c}">${COUNTRY[c]} (${counts[c]})</option>`).join("");
+  document.getElementById("country").innerHTML=`<option value="all">All countries</option>${opts}`;
+})();
+
+/* ---------- Sync to the viewer's account (db capability), with this-device fallback ---------- */
+const cloud={ref:null,writing:false,dirty:false,timer:null};
+function setSync(s){
+  const el=document.getElementById("sync"); el.dataset.s=s;
+  el.textContent={local:"Saved on this device",cloud:"Synced to your account",saving:"Saving…",error:"Couldn't sync, saved on this device"}[s];
+}
+function queueCloudSave(){ if(!cloud.ref) return; clearTimeout(cloud.timer); cloud.timer=setTimeout(flushCloud,800); }
+async function flushCloud(){
+  if(!cloud.ref) return;
+  if(cloud.writing){ cloud.dirty=true; return; }
+  cloud.writing=true; cloud.dirty=false; setSync("saving");
+  try{ await cloud.ref.set({state:JSON.parse(JSON.stringify(state))}); setSync("cloud"); }
+  catch(e){ const c=e&&e.code; if(c==="invalid_argument"||c==="revoked"||c==="not_granted"||c==="capability_disabled"){ cloud.ref=null; setSync("local"); } else setSync("error"); }
+  cloud.writing=false; if(cloud.dirty) flushCloud();
+}
+async function initCloud(){
+  if(!window.claude||typeof window.claude.use!=="function") return;
+  let db=null,user=null;
+  try{ [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]); }catch(e){ return; }
+  if(!db||!user) return;
+  let uid=null; try{ uid=await user.id(); }catch(e){}
+  if(!uid) return;
+  let ref; try{ ref=db.doc("data/users/"+uid+"/planner"); }catch(e){ return; }
+  try{
+    const snap=await ref.get();
+    cloud.ref=ref;
+    const remote=snap.exists&&snap.data()&&snap.data().state;
+    if(remote&&(remote.updatedAt||0)>(state.updatedAt||0)){ state=normalize(remote); saveLocal(); renderAll(); setSync("cloud"); }
+    else if(state.updatedAt&&(!remote||(remote.updatedAt||0)<state.updatedAt)){ flushCloud(); }
+    else setSync("cloud");
+  }catch(e){ cloud.ref=null; return; }
+  ref.onSnapshot(snap=>{
+    if(!snap.exists||snap.metadata.hasPendingWrites) return;
+    const d=snap.data(); const remote=d&&d.state;
+    if(remote&&(remote.updatedAt||0)>(state.updatedAt||0)){
+      const active=document.activeElement; if(active&&active.dataset&&active.dataset.note) return;
+      state=normalize(remote); saveLocal(); renderAll();
+    }
+  },()=>{});
+}
+
+/* ---------- Boot ---------- */
+const startTab=location.hash.slice(1);
+ui.tab=["plan","wines","map"].includes(startTab)?startTab:"plan";
+renderAll();
+initCloud();
+})();
+</script>
+</body>
+</html>
